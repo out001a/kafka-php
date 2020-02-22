@@ -37,6 +37,8 @@ class Consumer
     
     private $isRunning = false;
 
+    protected $processes = array();
+
     // }}}
     // {{{ functions
     // {{{ public function __construct()
@@ -67,17 +69,24 @@ class Consumer
             $this->error('Has start consumer');
             return;
         }
-        $process = new \Kafka\Consumer\Process($consumer);
-        if ($this->logger) {
-            $process->setLogger($this->logger);
-        }
-        $process->start();
+        $this->setProcess($consumer, $isBlock);
         $this->isRunning = true;
-        if ($isBlock) {
-            \Amp\run();
-        }
+        \Amp\run();
+        $this->isRunning = false;
     }
 
     // }}}
     // }}}
+
+    protected function setProcess(\Closure $consumer = null, $isBlock = true)
+    {
+        if (!isset($this->processes[$isBlock])) {
+            $this->processes[$isBlock] = new \Kafka\Consumer\Process($consumer);
+            if ($this->logger) {
+                $this->processes[$isBlock]->setLogger($this->logger);
+            }
+            $this->processes[$isBlock]->start($isBlock);
+        }
+    }
+
 }

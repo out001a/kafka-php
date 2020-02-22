@@ -43,6 +43,10 @@ class Process
 
     protected $messages = array();
 
+    protected $isBlock = true;
+
+    protected $isFirstConsume = true;
+
     // }}}
     // {{{ functions
     // {{{ public function __construct()
@@ -50,6 +54,7 @@ class Process
     public function __construct(\Closure $consumer = null)
     {
         $this->consumer = $consumer;
+        $this->isFirstConsume = true;
     }
 
     // }}}
@@ -119,10 +124,11 @@ class Process
      * @access public
      * @return void
      */
-    public function start()
+    public function start($isBlock = true)
     {
         $this->init();
         $this->state->start();
+        $this->isBlock = $isBlock;
     }
 
     // }}}
@@ -675,6 +681,14 @@ class Process
         }
 
         $this->messages = array();
+
+        if ($this->isFirstConsume) {
+            $this->isFirstConsume = false;
+        } else {
+            if (!$this->isBlock) {
+                \Amp\stop();
+            }
+        }
     }
 
 
